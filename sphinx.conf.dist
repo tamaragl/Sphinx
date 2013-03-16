@@ -1,0 +1,148 @@
+/**
+ * Sphinx file configuration
+ * File path: /etc/sphinxsearch/sphinx.conf.dist
+ */
+
+source connect
+{
+    type            = mysql
+    sql_host        = localhost
+    sql_user        = root
+    sql_pass        = softonic
+    sql_db          = sakila
+    sql_port        = 3306
+}
+
+source src1 : connect
+{
+    # sql_query_pre
+    sql_query_pre = SET NAMES utf8
+
+    #main document fetch query
+    sql_query = 	SELECT c.category_id as category_id, c.name as name, COUNT(*) AS total_found  FROM category c INNER JOIN film_category fc USING( category_id ) GROUP BY c.category_id
+
+    # Attributes ( sql_attr_uint | sql_attr_timestamp | sql_attr_bool | sql_attr_str2ordinal | sql_attr_float )
+        sql_attr_uint   = total_found
+        sql_field_string   = name
+}
+
+source src2 : connect
+{
+        sql_query = SELECT * FROM actor
+
+        sql_field_string        = first_name
+        sql_field_string        = last_name
+}
+
+source src3 : connect
+{
+        sql_query = SELECT * FROM customer
+
+        sql_field_string = first_name
+        sql_field_string = last_name
+}
+
+source src4 : connect
+{
+        sql_query = SELECT * FROM film
+
+        sql_field_string = title
+
+}
+
+source src5 : connect
+{
+        sql_query = SELECT c.customer_id, c.first_name, c.last_name, COUNT(*) AS total FROM customer c INNER JOIN rental r USING( customer_id ) GROUP BY c.customer_id ORDER BY total DESC
+        sql_attr_uint   = total
+        sql_field_string   = first_name
+        sql_field_string   = last_name
+}
+
+source src6 : connect
+{
+        sql_query = SELECT c.customer_id, COUNT(c.customer_id) AS total FROM customer c INNER JOIN rental r USING(customer_id);
+
+        sql_attr_uint = total
+}
+
+index index_src1
+{
+    source          = src1
+    path            = /var/sphinx/src1
+    docinfo         = extern
+    mlock           = 0
+    min_word_len    = 1
+    charset_type    = utf-8
+    charset_table   = 0..9, A..Z->a..z, _, -, a..z, U+410..U+42F->U+430..U+44F, U+430..U+44F, \
+                            U+C7->U+E7, U+E7, \
+                            U+D1->U+F1, U+F1, \
+                            U+DD->y, U+FD->y, \
+                            U+C0->a, U+C1->a, U+C2->a, U+C3->a, U+C4->a, U+C5->a, \
+                            U+E0->a, U+E1->a, U+E2->a, U+E3->a, U+E4->a, U+E5->a, \
+                            U+C8->e, U+C9->e, U+CA->e, U+CB->e, \
+                            U+E8->e, U+E9->e, U+EA->e, U+EB->e, \
+                            U+CC->i, U+CD->i, U+CE->i, U+CF->i, \
+                            U+EC->i, U+ED->i, U+EE->i, U+EF->i, \
+                            U+D2->o, U+D3->o, U+D4->o, U+D5->o, U+D6->o, \
+                            U+F2->o, U+F3->o, U+F4->o, U+F5->o, U+F6->o, \
+                            U+D9->u, U+DA->u, U+DB->u, U+DC->u, \
+                            U+F9->u, U+FA->u, U+FB->u, U+FC->u
+
+    html_strip      = 1
+    min_prefix_len  = 0
+    min_infix_len   = 0
+}
+
+
+ndex index_test2 : index_src1
+{
+		source          = src2
+		path            = /tmp/test2
+}
+
+index index_test3 : index_src1
+{
+        source          = src3
+        path            = /tmp/test3
+}
+
+index index_test4 : index_src1
+{
+        source          = src4
+        path            = /tmp/test4
+}
+
+index index_test5 : index_src1
+{
+        source          = src5
+        path            = /tmp/test5
+}
+
+index index_test6 : index_src1
+{
+        source          = src6
+        path            = /tmp/test6
+}
+
+
+# indexer settings
+indexer
+{
+   mem_limit = 512M
+}
+
+
+searchd
+{
+    port             = 3312
+    log              = /tmp/searchd.log
+    query_log        = /tmp/query.log
+    read_timeout     = 5
+    max_children     = 30
+    pid_file         = /tmp/searchd.pid
+    max_matches      = 500000
+    seamless_rotate  = 1
+    preopen_indexes  = 0
+    unlink_old       = 1
+}
+}
