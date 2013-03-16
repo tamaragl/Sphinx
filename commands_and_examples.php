@@ -54,13 +54,22 @@ source src1 : connect
 }
 
 
-
 public function getCategoriesMenu()
 {	
 
 	$sphinx = new SphinxClient();
 	$sphinx->setServer( 'localhost', 3312 );
+
+	//ORDER BY name ASC
 	$sphinx->SetSortMode( SPH_SORT_EXTENDED , "name ASC" );
+	
+	//Muestra todas las categorias excepto(true) aquellas con cantidad 61
+	$sphinx->SetFilter( 'total_found', array( 61 ), true );
+
+	//offset, limit, max-maches
+	$sphinx->setLimits(100,100,1000);
+
+	//"dog" muestra todos los resultados que matcheen con "dog"
 	$results = $sphinx->Query( "", "index_src1" );
 
 	foreach ($results['matches'] as $key => $category) 
@@ -72,4 +81,3 @@ public function getCategoriesMenu()
 	return $menu_categories;
 
 }
-
