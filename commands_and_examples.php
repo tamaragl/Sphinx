@@ -81,3 +81,16 @@ public function getCategoriesMenu()
 	return $menu_categories;
 
 }
+
+
+//Change the weights to give to title column more relevance than 
+//description column
+
+$sphinx = new SphinxClient();
+$sphinx->setServer( 'localhost', 3312 );
+$sphinx->SetMatchMode ( SPH_MATCH_EXTENDED );
+$sphinx->SetSortMode( SPH_SORT_RELEVANCE );
+$sphinx->SetRankingMode( SPH_RANK_PROXIMITY_BM25 );
+
+$sphinx->SetFieldWeights( array( 'title' => 5 ) );
+$res = $sphinx->Query ( "dog", "index_test" );
